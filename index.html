@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brisket Cook Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+  :root{
+    --char: #1b1613; --char-2: #241d19; --char-3: #2e2521;
+    --ember: #e0672c; --ember-dim: #b34f22;
+    --smoke: #9a9187; --paper: #f3ead9; --paper-line: #d9cbae;
+    --good: #7fae6a; --warn: #e0a72c; --bad: #d1483f;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--char); color:var(--paper); font-family:'Inter',sans-serif; line-height:1.5; min-height:100vh;}
+  .wrap{max-width:960px;margin:0 auto;padding:36px 20px 90px;}
+  header{margin-bottom:26px;}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;color:var(--ember);letter-spacing:.14em;font-size:12px;text-transform:uppercase;margin:0 0 8px;}
+  h1{font-family:'Oswald',sans-serif;font-weight:700;font-size:clamp(28px,5vw,42px);margin:0 0 10px;color:var(--paper);}
+  header p{color:var(--smoke);margin:0;max-width:64ch;}
+
+  nav.tabs{display:flex;gap:6px;margin-bottom:22px;border-bottom:1px solid #3a2f28;flex-wrap:wrap;}
+  nav.tabs button{
+    background:none;border:none;color:var(--smoke);font-family:'Oswald',sans-serif;
+    font-weight:600;letter-spacing:.03em;text-transform:uppercase;font-size:13px;
+    padding:12px 16px;cursor:pointer;border-bottom:2px solid transparent;
+  }
+  nav.tabs button.active{color:var(--ember);border-bottom-color:var(--ember);}
+  nav.tabs button:hover{color:var(--paper);}
+
+  .tabpanel{display:none;}
+  .tabpanel.active{display:block;}
+
+  .card{background:var(--char-2);border:1px solid #3a2f28;border-radius:10px;padding:26px 28px;margin-bottom:22px;}
+  .card h2{font-family:'Oswald',sans-serif;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--ember);margin:0 0 18px;font-weight:600;}
+  .card h2 small{color:var(--smoke);text-transform:none;letter-spacing:0;font-size:12px;font-family:'Inter',sans-serif;font-weight:400;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px 22px;}
+  @media (max-width:640px){ .grid{grid-template-columns:1fr;} }
+
+  label{display:block;font-size:12.5px;color:var(--smoke);margin-bottom:6px;font-weight:500;}
+  .field{margin-bottom:2px;}
+  input[type=text],input[type=number],input[type=datetime-local],select,textarea{
+    width:100%;background:var(--char);border:1px solid #453a32;color:var(--paper);
+    border-radius:6px;padding:10px 11px;font-family:'IBM Plex Mono',monospace;font-size:13.5px;
+  }
+  textarea{font-family:'Inter',sans-serif;font-size:13.5px;resize:vertical;min-height:90px;line-height:1.5;}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--ember);outline-offset:1px;}
+
+  .field-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
+  .field-row button.tiny{
+    background:none;border:1px solid var(--smoke);color:var(--smoke);font-size:11px;
+    padding:3px 9px;border-radius:12px;cursor:pointer;font-family:'IBM Plex Mono',monospace;white-space:nowrap;
+  }
+  .field-row button.tiny:hover{border-color:var(--ember);color:var(--ember);}
+
+  details{margin-top:6px;}
+  summary{cursor:pointer;color:var(--smoke);font-size:13px;font-family:'IBM Plex Mono',monospace;padding:8px 0;}
+  summary:hover{color:var(--paper);}
+  .adv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 18px;margin-top:14px;}
+  @media (max-width:640px){ .adv-grid{grid-template-columns:1fr 1fr;} }
+  .adv-grid label{font-size:11.5px;}
+
+  button.primary{
+    background:var(--ember);color:#1b1613;border:none;font-family:'Oswald',sans-serif;font-weight:700;
+    letter-spacing:.04em;text-transform:uppercase;font-size:14px;padding:13px 24px;border-radius:7px;cursor:pointer;
+  }
+  button.primary:hover{background:#ef763a;}
+  button.primary:disabled{opacity:.4;cursor:not-allowed;}
+  button.secondary{
+    background:transparent;color:var(--paper);border:1px solid var(--smoke);font-family:'Oswald',sans-serif;
+    font-weight:600;letter-spacing:.03em;text-transform:uppercase;font-size:13px;padding:10px 18px;border-radius:7px;cursor:pointer;
+  }
+  button.secondary:hover{border-color:var(--paper);}
+  button.danger{border-color:var(--bad);color:var(--bad);}
+  button.danger:hover{background:rgba(209,72,63,.12);}
+  .actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+
+  .callout{border-left:3px solid var(--warn);background:rgba(224,167,44,.08);padding:12px 14px;border-radius:4px;font-size:13.5px;color:#f0d99b;margin-bottom:16px;}
+  .callout.bad{border-left-color:var(--bad);background:rgba(209,72,63,.1);color:#f2b6b0;}
+  .callout.good{border-left-color:var(--good);background:rgba(127,174,106,.1);color:#c8e0bd;}
+
+  .banner{background:rgba(224,103,44,.12);border:1px solid var(--ember-dim);border-radius:8px;padding:12px 16px;margin-bottom:18px;font-size:13.5px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+
+  /* ticket */
+  #results{display:none;}
+  .ticket{background:var(--paper);color:#2a2118;border-radius:2px;position:relative;box-shadow:0 18px 40px rgba(0,0,0,.35);overflow:hidden;}
+  .ticket::before{content:"";display:block;height:10px;background:repeating-linear-gradient(90deg, transparent 0 8px, var(--char) 8px 10px);opacity:.5;}
+  .ticket-inner{padding:26px 30px 30px;}
+  .ticket h3{font-family:'Oswald',sans-serif;font-size:20px;margin:0 0 2px;}
+  .ticket .meta{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6b5c46;margin-bottom:18px;}
+  .tl-row{display:grid;grid-template-columns:150px 120px 1fr;gap:10px;padding:10px 0;border-top:1px dashed var(--paper-line);font-size:13px;align-items:start;}
+  .tl-row:first-of-type{border-top:1px solid #2a2118;}
+  .tl-row .t{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;}
+  .tl-row .s{font-weight:600;text-transform:uppercase;font-size:11.5px;letter-spacing:.03em;color:var(--ember-dim);}
+  .tl-row .d{color:#3a2e21;white-space:pre-line;}
+  .tl-row.milestone{background:rgba(224,103,44,.09);}
+  @media (max-width:640px){ .tl-row{grid-template-columns:1fr;gap:2px;padding:12px 0;} }
+  .subhead{font-family:'Oswald',sans-serif;font-size:14px;text-transform:uppercase;letter-spacing:.05em;color:#7a2e0e;margin:22px 0 8px;}
+  .ticket ul{margin:0 0 6px;padding-left:20px;font-size:13px;}
+  .ticket ul li{margin-bottom:4px;}
+  .ticket .fine{font-size:11.5px;color:#6b5c46;margin-top:4px;}
+
+  /* rating select rows */
+  .rate-row{display:grid;grid-template-columns:1fr 90px;gap:12px;align-items:center;padding:8px 0;border-top:1px solid #342a24;}
+  .rate-row:first-of-type{border-top:none;}
+  .rate-row .rl{font-size:13.5px;}
+  .rate-row .rc{font-size:11px;color:var(--smoke);display:block;margin-top:2px;}
+
+  /* comment / feedback cards */
+  .entry{background:var(--char);border:1px solid #3a2f28;border-radius:8px;padding:14px 16px;margin-bottom:10px;font-size:13.5px;}
+  .entry .who{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ember);margin-bottom:6px;}
+  .entry .stats{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--smoke);margin-bottom:6px;}
+  .entry.empty{color:var(--smoke);font-style:italic;border-style:dashed;}
+
+  .copybox textarea{min-height:340px;font-family:'IBM Plex Mono',monospace;font-size:12px;white-space:pre;}
+  .toast{display:inline-block;color:var(--good);font-size:12.5px;margin-left:10px;}
+
+  footer{margin-top:50px;color:var(--smoke);font-size:12px;text-align:center;}
+  footer a{color:var(--ember);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Smokehouse Planner</p>
+    <h1>Brisket Cook Log</h1>
+    <p>Plan a cook, save it to your log, collect feedback after eating, and pull a clean summary you can
+    paste straight into an AI agent to figure out what to change next time.</p>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="plan" class="active">Plan a Cook</button>
+    <button data-tab="feedback">Feedback &amp; Comments</button>
+    <button data-tab="log">Cook Log / Copy for AI</button>
+  </nav>
+
+  <!-- ============ TAB: PLAN ============ -->
+  <div class="tabpanel active" id="tab-plan">
+
+    <div class="card">
+      <h2>Load a Past Cook <small>&mdash; prefill everything below, then change the dates to redo it</small></h2>
+      <div class="grid">
+        <div class="field">
+          <label for="loadSelect">Saved cooks</label>
+          <select id="loadSelect"><option value="">— select a past cook —</option></select>
+        </div>
+        <div class="field" style="align-self:end;">
+          <button type="button" class="secondary" id="loadBtn">Load into form below</button>
+          <button type="button" class="secondary" id="clearLoadBtn">Start fresh</button>
+        </div>
+      </div>
+      <div class="banner" id="loadedBanner" style="display:none;"></div>
+    </div>
+
+    <form id="form">
+      <div class="card">
+        <h2>The Basics</h2>
+        <div class="grid">
+          <div class="field">
+            <label for="cookLabel">Cook nickname (optional)</label>
+            <input type="text" id="cookLabel" placeholder="e.g. July 4th brisket">
+          </div>
+          <div class="field">
+            <label for="weight">Brisket weight (lb)</label>
+            <input type="number" id="weight" step="0.01" min="1" value="11.64" required>
+          </div>
+          <div class="field">
+            <label for="eatTime">When you want to eat</label>
+            <input type="datetime-local" id="eatTime" required>
+          </div>
+          <div class="field">
+            <label for="restBuffer">Rest ends this many minutes before eating</label>
+            <input type="number" id="restBuffer" min="0" value="10" required>
+          </div>
+          <div class="field">
+            <label for="smokerOn">Brisket goes on the smoker at</label>
+            <input type="datetime-local" id="smokerOn" required>
+          </div>
+          <div class="field">
+            <label for="prepStart">You can start prepping (trim) at</label>
+            <input type="datetime-local" id="prepStart" required>
+          </div>
+          <div class="field">
+            <label for="smokerType">Smoker type</label>
+            <select id="smokerType">
+              <option value="offset">Offset (side firebox / front door)</option>
+              <option value="generic">Other (pellet / ceramic / vertical)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="tempRange">Smoker temp target</label>
+            <input type="text" id="tempRange" value="225-250°F">
+          </div>
+          <div class="field">
+            <label for="wood">Wood mix</label>
+            <input type="text" id="wood" value="Apple + hickory, ~1:2 ratio">
+          </div>
+        </div>
+
+        <details>
+          <summary>Advanced timing (only touch these if you know why)</summary>
+          <div class="adv-grid">
+            <div class="field"><label for="lowFactor">Fast estimate (hr/lb)</label><input type="number" id="lowFactor" step="0.05" value="1.25"></div>
+            <div class="field"><label for="highFactor">Slow estimate (hr/lb)</label><input type="number" id="highFactor" step="0.05" value="1.5"></div>
+            <div class="field"><label for="wrapFraction">Wrap point (% through cook)</label><input type="number" id="wrapFraction" step="1" value="45"></div>
+            <div class="field"><label for="trimMin">Trim duration (min)</label><input type="number" id="trimMin" value="45"></div>
+            <div class="field"><label for="renderMin">Render fat duration (min)</label><input type="number" id="renderMin" value="40"></div>
+            <div class="field"><label for="injectMin">Inject duration (min)</label><input type="number" id="injectMin" value="20"></div>
+            <div class="field"><label for="rubMin">Rub (stage 2) duration (min)</label><input type="number" id="rubMin" value="15"></div>
+            <div class="field"><label for="rubEndOffset">Rub finishes, min before smoker-on</label><input type="number" id="rubEndOffset" value="30"></div>
+            <div class="field"><label for="fireStableOffset">Fire stable, min before smoker-on</label><input type="number" id="fireStableOffset" value="45"></div>
+          </div>
+        </details>
+      </div>
+
+      <div class="card">
+        <h2>Injection, Rub &amp; Notes <small>&mdash; fully editable, saved with this cook</small></h2>
+
+        <div class="field-row"><label for="injectionText">Injection recipe</label><button type="button" class="tiny" data-fill="injectionText">Fill default</button></div>
+        <textarea id="injectionText"></textarea>
+
+        <div style="height:14px;"></div>
+        <div class="field-row"><label for="rubStage1Text">Rub — stage 1 (salt, applied early)</label><button type="button" class="tiny" data-fill="rubStage1Text">Fill default</button></div>
+        <textarea id="rubStage1Text" style="min-height:56px;"></textarea>
+
+        <div style="height:14px;"></div>
+        <div class="field-row"><label for="rubStage2Text">Rub — stage 2 (before smoking)</label><button type="button" class="tiny" data-fill="rubStage2Text">Fill default</button></div>
+        <textarea id="rubStage2Text" style="min-height:56px;"></textarea>
+
+        <div style="height:14px;"></div>
+        <div class="field-row"><label for="smokerNotesText">Smoker-specific notes (one per line)</label><button type="button" class="tiny" data-fill="smokerNotesText">Fill default</button></div>
+        <textarea id="smokerNotesText"></textarea>
+
+        <div style="height:14px;"></div>
+        <div class="field-row"><label for="extraNotesText">Extra notes (one per line, optional)</label><button type="button" class="tiny" data-fill="extraNotesText">Fill default</button></div>
+        <textarea id="extraNotesText" style="min-height:56px;"></textarea>
+      </div>
+
+      <button type="submit" class="primary">Build Schedule</button>
+    </form>
+
+    <div id="results">
+      <div id="warnings"></div>
+      <div class="ticket"><div class="ticket-inner" id="ticketContent"></div></div>
+      <div class="actions">
+        <button class="primary" id="downloadBtn" type="button">Download PDF</button>
+        <button class="secondary" id="saveNewBtn" type="button">Save as New Cook</button>
+        <button class="secondary" id="updateBtn" type="button" style="display:none;">Update Loaded Cook</button>
+        <span class="toast" id="saveToast"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TAB: FEEDBACK ============ -->
+  <div class="tabpanel" id="tab-feedback">
+    <div class="card">
+      <h2>Which cook are you rating?</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="fbSelect">Pick the date you ate it</label>
+          <select id="fbSelect"><option value="">— select a cook —</option></select>
+        </div>
+      </div>
+      <div id="fbSummary" class="entry empty" style="margin-top:14px;">Select a cook above to see its settings.</div>
+    </div>
+
+    <div class="card" id="fbFormCard" style="display:none;">
+      <h2>Feedback Questionnaire</h2>
+      <div class="field" style="margin-bottom:14px;">
+        <label for="fbName">Your name (optional)</label>
+        <input type="text" id="fbName" placeholder="e.g. Dave">
+      </div>
+      <div id="ratingRows"></div>
+      <div style="height:10px;"></div>
+      <div class="field">
+        <label for="fbChange">What would you change next time?</label>
+        <textarea id="fbChange" style="min-height:70px;"></textarea>
+      </div>
+      <div style="height:10px;"></div>
+      <div class="field">
+        <label for="fbComments">Additional comments</label>
+        <textarea id="fbComments" style="min-height:70px;"></textarea>
+      </div>
+      <div class="actions">
+        <button class="primary" type="button" id="fbSubmitBtn">Submit Feedback</button>
+        <span class="toast" id="fbToast"></span>
+      </div>
+    </div>
+
+    <div class="card" id="fbListCard" style="display:none;">
+      <h2>Feedback so far</h2>
+      <div id="fbList"></div>
+    </div>
+
+    <div class="card" id="commentCard" style="display:none;">
+      <h2>Comments</h2>
+      <div id="commentList"></div>
+      <div style="height:12px;"></div>
+      <div class="field">
+        <label for="commentName">Name (optional)</label>
+        <input type="text" id="commentName" placeholder="e.g. Dave">
+      </div>
+      <div style="height:10px;"></div>
+      <div class="field">
+        <label for="commentText">Add a comment</label>
+        <textarea id="commentText" style="min-height:60px;"></textarea>
+      </div>
+      <div class="actions">
+        <button class="primary" type="button" id="commentSubmitBtn">Post Comment</button>
+        <span class="toast" id="commentToast"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TAB: LOG ============ -->
+  <div class="tabpanel" id="tab-log">
+    <div class="card">
+      <h2>Cook Log</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="logSelect">Select a cook</label>
+          <select id="logSelect"><option value="">— select a cook —</option></select>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="secondary" type="button" id="logLoadTemplateBtn">Load as template to redo</button>
+        <button class="secondary danger" type="button" id="logDeleteBtn">Delete this cook</button>
+      </div>
+    </div>
+
+    <div class="card copybox" id="logCopyCard" style="display:none;">
+      <h2>Copy for AI <small>&mdash; settings, procedures, and all feedback in one block</small></h2>
+      <div class="actions" style="margin-top:0;margin-bottom:14px;">
+        <button class="primary" type="button" id="copyBtn">Copy to Clipboard</button>
+        <span class="toast" id="copyToast"></span>
+      </div>
+      <textarea id="copyText" readonly></textarea>
+    </div>
+  </div>
+
+  <footer>All data is stored in your own Firebase Realtime Database. Nothing goes anywhere else.</footer>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getDatabase, ref, push, set, update, remove, onValue
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCwcYTZpld2IC-s2zoUWYzzTArfPbKee7I",
+  authDomain: "food-projects-9723c.firebaseapp.com",
+  databaseURL: "https://food-projects-9723c-default-rtdb.firebaseio.com",
+  projectId: "food-projects-9723c",
+  storageBucket: "food-projects-9723c.firebasestorage.app",
+  messagingSenderId: "775230527688",
+  appId: "1:775230527688:web:9044ced0b9a938acdd6dfd",
+  measurementId: "G-N1CBHSL4NT"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+// Analytics is optional and can be blocked by ad-blockers — never let it break the app.
+try {
+  const { getAnalytics } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js");
+  getAnalytics(app);
+} catch (e) { /* analytics unavailable, ignore */ }
+
+// ---------------------------------------------------------------------------
+// Tabs
+// ---------------------------------------------------------------------------
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tabpanel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+  });
+});
+function goToTab(name){
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+  document.querySelectorAll('.tabpanel').forEach(p=>p.classList.toggle('active', p.id==='tab-'+name));
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+function fmt(d){ return d.toLocaleString('en-US', {weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit', hour12:true}); }
+function fmtRange(a,b){ return fmt(a) + ' \u2013 ' + fmt(b); }
+function fmtDur(mins){
+  mins = Math.round(mins);
+  const sign = mins < 0 ? '-' : '';
+  mins = Math.abs(mins);
+  const h = Math.floor(mins/60), m = mins%60;
+  if(h<=0) return sign + m + 'm';
+  if(m===0) return sign + h + 'h';
+  return sign + h + 'h ' + m + 'm';
+}
+function addMin(d, mins){ return new Date(d.getTime() + mins*60000); }
+function diffMin(a,b){ return (a.getTime()-b.getTime())/60000; }
+function toFraction(val){
+  const rounded = Math.round(val*4)/4;
+  const whole = Math.floor(rounded);
+  const frac = rounded - whole;
+  const map = {0:'', 0.25:'\u00BC', 0.5:'\u00BD', 0.75:'\u00BE'};
+  const fracStr = map[frac] !== undefined ? map[frac] : '';
+  if(whole === 0 && fracStr) return fracStr;
+  if(fracStr) return whole + ' ' + fracStr;
+  return String(whole || rounded);
+}
+function toLocalInputValue(d){
+  const pad = n => String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
+}
+function escapeHtml(str){
+  return String(str||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function linesToBullets(text){
+  return (text||'').split('\n').map(s=>s.trim()).filter(Boolean);
+}
+
+function setDefaultDatetimes(){
+  const now = new Date();
+  const roundUp = new Date(now.getTime());
+  roundUp.setMinutes(0,0,0);
+  roundUp.setHours(roundUp.getHours()+1);
+  document.getElementById('prepStart').value = toLocalInputValue(roundUp);
+  document.getElementById('smokerOn').value = toLocalInputValue(addMin(roundUp, 12*60));
+  document.getElementById('eatTime').value = toLocalInputValue(addMin(roundUp, 31*60));
+}
+setDefaultDatetimes();
+
+// ---------------------------------------------------------------------------
+// Default recipe/notes text
+// ---------------------------------------------------------------------------
+function defaultInjectionText(weight){
+  const oz = Math.round(weight*10)/10;
+  return [
+    toFraction(1) + ' cup rendered beef fat from your trimmings, strained',
+    '1 cup low-sodium beef broth',
+    '2 tbsp Worcestershire sauce',
+    '1 tbsp soy sauce (optional)',
+    '1 tsp beef bouillon powder, dissolved',
+    '1/2 tsp garlic powder, 1/2 tsp coarse black pepper',
+    '',
+    'Target ~1 oz per lb (~' + oz + ' oz total for this brisket). Inject on a 1" grid, multiple angles, flat and point.'
+  ].join('\n');
+}
+function defaultRubStage1Text(){
+  return 'Kosher salt only, applied evenly on all sides. Uncovered on a rack in the fridge afterward to form a tacky pellicle.';
+}
+function defaultRubStage2Text(weight){
+  const scale = weight/12;
+  return [
+    toFraction(0.25*scale) + ' cup coarse black pepper',
+    toFraction(2*scale) + ' tbsp granulated garlic',
+    toFraction(1*scale) + ' tbsp paprika (optional, for color)'
+  ].join('\n');
+}
+function defaultSmokerNotesText(isOffset){
+  if(isOffset){
+    return [
+      'Point end toward the firebox, flat toward the chimney/far end; fat side toward the firebox too.',
+      'Rotate 180 degrees every 2-3 hours to even out the hot-side/cool-side gradient.',
+      'Feed small, dry splits every 45-75 minutes to hold a steady temperature all night.',
+      'Keep the exhaust damper open; control temperature with the firebox intake damper.',
+      'Aim for thin blue smoke; thick white/gray smoke means the fire needs more air or a drier split.'
+    ].join('\n');
+  }
+  return [
+    'Keep steady at your target temp range; minimize lid/door opening.',
+    'Use a water pan if your smoker runs dry.',
+    'Rotate periodically if you notice uneven coloring.'
+  ].join('\n');
+}
+function defaultExtraNotesText(){
+  return 'A reliable leave-in probe thermometer is the real clock for this cook, not the schedule times.';
+}
+
+function fillDefault(field){
+  const weight = parseFloat(document.getElementById('weight').value) || 11.64;
+  const isOffset = document.getElementById('smokerType').value === 'offset';
+  const map = {
+    injectionText: ()=>defaultInjectionText(weight),
+    rubStage1Text: ()=>defaultRubStage1Text(),
+    rubStage2Text: ()=>defaultRubStage2Text(weight),
+    smokerNotesText: ()=>defaultSmokerNotesText(isOffset),
+    extraNotesText: ()=>defaultExtraNotesText()
+  };
+  if(map[field]) document.getElementById(field).value = map[field]();
+}
+document.querySelectorAll('button[data-fill]').forEach(btn=>{
+  btn.addEventListener('click', ()=>fillDefault(btn.dataset.fill));
+});
+// prefill everything on first load
+['injectionText','rubStage1Text','rubStage2Text','smokerNotesText','extraNotesText'].forEach(f=>fillDefault(f));
+
+// ---------------------------------------------------------------------------
+// Core computation (timing) — same logic as before
+// ---------------------------------------------------------------------------
+let lastSchedule = null;
+
+function readForm(){
+  return {
+    cookLabel: document.getElementById('cookLabel').value.trim(),
+    weight: parseFloat(document.getElementById('weight').value),
+    eatTime: document.getElementById('eatTime').value,
+    restBuffer: parseFloat(document.getElementById('restBuffer').value),
+    smokerOn: document.getElementById('smokerOn').value,
+    prepStart: document.getElementById('prepStart').value,
+    smokerType: document.getElementById('smokerType').value,
+    tempRange: document.getElementById('tempRange').value,
+    wood: document.getElementById('wood').value,
+    lowFactor: parseFloat(document.getElementById('lowFactor').value),
+    highFactor: parseFloat(document.getElementById('highFactor').value),
+    wrapFraction: parseFloat(document.getElementById('wrapFraction').value),
+    trimMin: parseFloat(document.getElementById('trimMin').value),
+    renderMin: parseFloat(document.getElementById('renderMin').value),
+    injectMin: parseFloat(document.getElementById('injectMin').value),
+    rubMin: parseFloat(document.getElementById('rubMin').value),
+    rubEndOffset: parseFloat(document.getElementById('rubEndOffset').value),
+    fireStableOffset: parseFloat(document.getElementById('fireStableOffset').value),
+    injectionText: document.getElementById('injectionText').value,
+    rubStage1Text: document.getElementById('rubStage1Text').value,
+    rubStage2Text: document.getElementById('rubStage2Text').value,
+    smokerNotesText: document.getElementById('smokerNotesText').value,
+    extraNotesText: document.getElementById('extraNotesText').value
+  };
+}
+
+function writeForm(data){
+  document.getElementById('cookLabel').value = data.cookLabel || '';
+  document.getElementById('weight').value = data.weight;
+  document.getElementById('eatTime').value = data.eatTime;
+  document.getElementById('restBuffer').value = data.restBuffer;
+  document.getElementById('smokerOn').value = data.smokerOn;
+  document.getElementById('prepStart').value = data.prepStart;
+  document.getElementById('smokerType').value = data.smokerType;
+  document.getElementById('tempRange').value = data.tempRange;
+  document.getElementById('wood').value = data.wood;
+  document.getElementById('lowFactor').value = data.lowFactor;
+  document.getElementById('highFactor').value = data.highFactor;
+  document.getElementById('wrapFraction').value = data.wrapFraction;
+  document.getElementById('trimMin').value = data.trimMin;
+  document.getElementById('renderMin').value = data.renderMin;
+  document.getElementById('injectMin').value = data.injectMin;
+  document.getElementById('rubMin').value = data.rubMin;
+  document.getElementById('rubEndOffset').value = data.rubEndOffset;
+  document.getElementById('fireStableOffset').value = data.fireStableOffset;
+  document.getElementById('injectionText').value = data.injectionText || '';
+  document.getElementById('rubStage1Text').value = data.rubStage1Text || '';
+  document.getElementById('rubStage2Text').value = data.rubStage2Text || '';
+  document.getElementById('smokerNotesText').value = data.smokerNotesText || '';
+  document.getElementById('extraNotesText').value = data.extraNotesText || '';
+}
+
+function compute(){
+  const f = readForm();
+  const weight = f.weight;
+  const eatTime = new Date(f.eatTime);
+  const smokerOn = new Date(f.smokerOn);
+  const prepStart = new Date(f.prepStart);
+  const isOffset = f.smokerType === 'offset';
+
+  const warnings = [];
+
+  const trimStart = prepStart;
+  const trimEnd = addMin(trimStart, f.trimMin);
+  const saltTime = trimEnd;
+  const renderStart = trimEnd;
+  const renderEnd = addMin(renderStart, f.renderMin);
+
+  const rubEnd = addMin(smokerOn, -f.rubEndOffset);
+  const rubStart = addMin(rubEnd, -f.rubMin);
+  const injectEnd = rubStart;
+  const injectStart = addMin(injectEnd, -f.injectMin);
+  const pullFromFridge = injectStart;
+  const fireStableTime = addMin(smokerOn, -f.fireStableOffset);
+
+  const fridgeRestMin = diffMin(pullFromFridge, saltTime);
+  if(fridgeRestMin < 0){
+    warnings.push({level:'bad', text:'Not enough lead time between prep start and smoker-on time to fit trimming, injecting and rubbing (short by ' + fmtDur(-fridgeRestMin) + '). Move prep start earlier or push smoker-on later.'});
+  } else if(fridgeRestMin < 60){
+    warnings.push({level:'warn', text:'Only ' + fmtDur(fridgeRestMin) + ' between salting and injecting \u2014 the rub won\u2019t fully set, but it will still work fine.'});
+  }
+
+  const cookLowMin = weight*f.lowFactor*60;
+  const cookHighMin = weight*f.highFactor*60;
+  const pullWindowStart = addMin(smokerOn, cookLowMin);
+  const pullWindowEnd = addMin(smokerOn, cookHighMin);
+  const wrapWindowStart = addMin(smokerOn, cookLowMin*(f.wrapFraction/100));
+  const wrapWindowEnd = addMin(smokerOn, cookHighMin*(f.wrapFraction/100));
+
+  const restEnd = addMin(eatTime, -f.restBuffer);
+  const preheatCoolerTime = addMin(pullWindowStart, -20);
+  const holdLow = diffMin(restEnd, pullWindowEnd);
+  const holdHigh = diffMin(restEnd, pullWindowStart);
+
+  if(diffMin(pullWindowStart, restEnd) > 0){
+    warnings.push({level:'bad', text:'Even the fast-case cook estimate (' + fmt(pullWindowStart) + ') finishes after your rest needs to end (' + fmt(restEnd) + '). Start the smoker earlier or push the eat time back.'});
+  } else if(holdLow < 60){
+    warnings.push({level:'warn', text:'If the cook runs long, the hold buffer before serving could be under an hour (' + fmtDur(Math.max(holdLow,0)) + '). Consider an earlier smoker-on time for more cushion.'});
+  }
+
+  lastSchedule = Object.assign({}, f, {
+    eatTime, smokerOn, prepStart, isOffset,
+    trimStart, trimEnd, saltTime, renderStart, renderEnd,
+    rubEnd, rubStart, injectEnd, injectStart, pullFromFridge, fireStableTime, fridgeRestMin,
+    cookLowMin, cookHighMin, pullWindowStart, pullWindowEnd, wrapWindowStart, wrapWindowEnd,
+    restEnd, preheatCoolerTime, holdLow, holdHigh, warnings
+  });
+  return lastSchedule;
+}
+
+function buildRows(s){
+  const rows = [];
+  rows.push([fmt(s.trimStart), 'Trim', 'Competition-style trim: even 1/4" fat cap, round edges, remove silver skin. Save trimmings for rendering.', false]);
+  rows.push([fmt(s.saltTime), 'Rub — stage 1', s.rubStage1Text || 'Salt only, uncovered in the fridge.', false]);
+  rows.push([fmt(s.renderStart), 'Render fat', 'Melt trimmings low and slow, strain, refrigerate until needed (' + fmtDur(s.renderMin) + ').', false]);
+  rows.push(['\u2192 ' + fmtDur(s.fridgeRestMin), 'Fridge rest', 'Uncovered dry-brine window between salting and injecting.' + (s.fridgeRestMin >= 8*60 ? ' Great overnight window.' : s.fridgeRestMin < 60 ? ' Short window, but workable.' : ''), false]);
+  rows.push([fmt(s.pullFromFridge), 'Injection', (s.injectionText ? s.injectionText.split('\n')[0] : 'Warm fat, mix injection, inject on a 1" grid.') + ' (full recipe below)', false]);
+  rows.push([fmt(s.rubStart), 'Rub — stage 2', s.rubStage2Text ? 'Apply: ' + s.rubStage2Text.split('\n').join(', ') : 'Apply rub.', false]);
+  rows.push([fmt(s.fireStableTime), 'Fire stable', 'Smoker holding steady at ' + s.tempRange + ', clean thin blue smoke, water pan in place.', true]);
+  rows.push([fmt(s.smokerOn), 'ON SMOKER', s.isOffset ? 'Point toward firebox, fat side toward firebox. Probe in the thickest part of the flat.' : 'Arrange evenly per your smoker\u2019s heat source. Probe in the thickest part of the flat.', true]);
+  rows.push([fmtRange(s.smokerOn, s.wrapWindowStart), s.isOffset ? 'Tend fire' : 'Maintain temp', s.isOffset ? 'Small split every 45-75 min. Rotate 180\u00b0 every 2-3 hrs. Spritz hourly until wrapped.' : 'Keep steady at ' + s.tempRange + '. Minimize lid opening. Spritz hourly if desired until wrapped.', false]);
+  rows.push([fmtRange(s.wrapWindowStart, s.wrapWindowEnd), 'Wrap', 'Wrap in peach butcher paper (or foil) once bark is set, internal ~165-170\u00b0F.', false]);
+  rows.push([fmtRange(s.pullWindowStart, s.pullWindowEnd), 'Pull (target)', '200-205\u00b0F internal AND probe slides in like room-temp butter in both flat and point. Go by feel, not the clock.', true]);
+  rows.push(['immediately after', 'Vent & rewrap', 'Vent the wrap 10-15 min to stop carryover cooking, then rewrap in a dry towel.', false]);
+  rows.push([fmt(s.preheatCoolerTime), 'Preheat cooler', 'Dump hot water into the cooler, then dump it out, so it isn\u2019t a cold mass eating your hold time.', false]);
+  rows.push(['until ' + fmt(s.restEnd), 'Hold / rest', 'Hold in the preheated cooler. Expected hold length: roughly ' + fmtDur(Math.max(s.holdLow,0)) + ' to ' + fmtDur(Math.max(s.holdHigh,0)) + ', depending on actual pull time.', false]);
+  rows.push([fmt(s.restEnd), 'REST ENDS', 'Pull from cooler, unwrap.', true]);
+  rows.push([fmtRange(s.restEnd, s.eatTime), 'Slice & plate', 'Separate point from flat along the fat seam. Slice each against its own grain, pencil-width on the flat.', true]);
+  rows.push([fmt(s.eatTime), 'EAT', 'Spoon reserved jus/tallow over slices right before serving.', true]);
+  return rows;
+}
+
+function render(s){
+  const rows = buildRows(s);
+  const warningsEl = document.getElementById('warnings');
+  warningsEl.innerHTML = '';
+  s.warnings.forEach(w=>{
+    const div = document.createElement('div');
+    div.className = 'callout' + (w.level==='bad' ? ' bad' : '');
+    div.textContent = w.text;
+    warningsEl.appendChild(div);
+  });
+
+  let html = '';
+  html += '<h3>' + escapeHtml(s.cookLabel || (s.weight + ' lb Brisket')) + '</h3>';
+  html += '<div class="meta">Eat ' + fmt(s.eatTime) + ' &nbsp;|&nbsp; Rest ends ' + fmt(s.restEnd) + ' &nbsp;|&nbsp; On smoker ' + fmt(s.smokerOn) + ' &nbsp;|&nbsp; ' + escapeHtml(s.tempRange) + ', ' + escapeHtml(s.wood) + '</div>';
+
+  rows.forEach(r=>{
+    html += '<div class="tl-row' + (r[3] ? ' milestone' : '') + '">' +
+              '<div class="t">' + escapeHtml(r[0]) + '</div>' +
+              '<div class="s">' + escapeHtml(r[1]) + '</div>' +
+              '<div class="d">' + escapeHtml(r[2]) + '</div>' +
+            '</div>';
+  });
+
+  html += '<div class="subhead">Injection recipe</div><ul>' + linesToBullets(s.injectionText).map(l=>'<li>'+escapeHtml(l)+'</li>').join('') + '</ul>';
+  html += '<div class="subhead">Rub</div><ul>' +
+    '<li><b>Stage 1:</b> ' + escapeHtml(s.rubStage1Text) + '</li>' +
+    '<li><b>Stage 2:</b> ' + escapeHtml(s.rubStage2Text.split('\n').join(', ')) + '</li>' +
+    '</ul>';
+  html += '<div class="subhead">Smoker notes</div><ul>' + linesToBullets(s.smokerNotesText).map(l=>'<li>'+escapeHtml(l)+'</li>').join('') + '</ul>';
+  if(linesToBullets(s.extraNotesText).length){
+    html += '<div class="subhead">Extra notes</div><ul>' + linesToBullets(s.extraNotesText).map(l=>'<li>'+escapeHtml(l)+'</li>').join('') + '</ul>';
+  }
+
+  document.getElementById('ticketContent').innerHTML = html;
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+document.getElementById('form').addEventListener('submit', function(e){
+  e.preventDefault();
+  render(compute());
+});
+
+// ---------------------------------------------------------------------------
+// PDF generation
+// ---------------------------------------------------------------------------
+function generatePDF(s){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'letter'});
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 40;
+  let y = 50;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(19);
+  doc.text(s.cookLabel || (s.weight + ' lb Brisket Smoking Plan'), pageWidth/2, y, {align:'center'});
+  y += 20;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10.5); doc.setTextColor(85,85,85);
+  doc.text('Eat ' + fmt(s.eatTime) + '  |  Rest ends ' + fmt(s.restEnd) + '  |  On smoker ' + fmt(s.smokerOn), pageWidth/2, y, {align:'center'});
+  y += 14;
+  doc.text((s.isOffset ? 'Offset smoker (side firebox / front door)' : 'Smoker: generic') + '  |  ' + s.wood, pageWidth/2, y, {align:'center'});
+  y += 22;
+  doc.setTextColor(0,0,0);
+
+  function ensureSpace(needed){ if(y + needed > doc.internal.pageSize.getHeight() - 40){ doc.addPage(); y = 50; } }
+  function sectionHeader(title){
+    ensureSpace(30);
+    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(122,46,14);
+    doc.text(title, margin, y); y += 16;
+    doc.setTextColor(0,0,0); doc.setFont('helvetica','normal'); doc.setFontSize(9.3);
+  }
+  function bulletList(items){
+    items.forEach(it=>{
+      const lines = doc.splitTextToSize('\u2022 ' + it, pageWidth - margin*2 - 10);
+      ensureSpace(lines.length*11.5+2);
+      doc.text(lines, margin+4, y);
+      y += lines.length*11.5 + 3;
+    });
+  }
+
+  if(s.isOffset || linesToBullets(s.smokerNotesText).length){
+    sectionHeader('Smoker Notes');
+    bulletList(linesToBullets(s.smokerNotesText));
+    y += 6;
+  }
+
+  sectionHeader('Master Timeline');
+  const rows = buildRows(s).map(r => [r[0], r[1], r[2]]);
+  const milestoneFlags = buildRows(s).map(r=>r[3]);
+  doc.autoTable({
+    startY: y+4, margin:{left:margin, right:margin},
+    head: [['Time','Step','Details']], body: rows,
+    styles:{fontSize:8.3, cellPadding:4, valign:'top'},
+    headStyles:{fillColor:[122,46,14], textColor:255, fontStyle:'bold'},
+    alternateRowStyles:{fillColor:[247,240,236]},
+    columnStyles:{0:{cellWidth:100, fontStyle:'bold'},1:{cellWidth:85, fontStyle:'bold'},2:{cellWidth:'auto'}},
+    didParseCell: function(data){
+      if(data.section==='body' && milestoneFlags[data.row.index]) data.cell.styles.fillColor = [240,217,200];
+    }
+  });
+  y = doc.lastAutoTable.finalY + 18;
+
+  sectionHeader('Injection Recipe');
+  bulletList(linesToBullets(s.injectionText));
+  y += 4;
+
+  sectionHeader('Rub');
+  bulletList(['Stage 1: ' + s.rubStage1Text, 'Stage 2: ' + s.rubStage2Text.split('\n').join(', ')]);
+  y += 4;
+
+  if(linesToBullets(s.extraNotesText).length){
+    sectionHeader('Extra Notes');
+    bulletList(linesToBullets(s.extraNotesText));
+    y += 4;
+  }
+
+  sectionHeader('Key Temps at a Glance');
+  doc.autoTable({
+    startY: y, margin:{left:margin, right:margin},
+    body: [
+      ['Smoker temp', s.tempRange + ', steady, throughout'],
+      ['Wood', s.wood],
+      ['Wrap point', '~165-170\u00B0F internal, bark set'],
+      ['Pull point', '200-205\u00B0F AND probe-tender in flat & point'],
+      ['Hold/rest', 'Preheated cooler, towel-wrapped, keep above 140\u00B0F']
+    ],
+    styles:{fontSize:9, cellPadding:4},
+    columnStyles:{0:{cellWidth:110, fontStyle:'bold'},1:{cellWidth:'auto'}},
+    alternateRowStyles:{fillColor:[247,240,236]}, theme:'grid'
+  });
+  y = doc.lastAutoTable.finalY + 16;
+
+  ensureSpace(20);
+  doc.setFontSize(8.3); doc.setTextColor(80,80,80);
+  doc.text('A reliable leave-in probe thermometer is the real clock for this cook, not the schedule times.', margin, y);
+
+  doc.save('brisket-schedule-' + (s.cookLabel ? s.cookLabel.replace(/[^a-z0-9]+/gi,'-') : s.weight+'lb') + '.pdf');
+}
+document.getElementById('downloadBtn').addEventListener('click', function(){ if(lastSchedule) generatePDF(lastSchedule); });
+
+// ---------------------------------------------------------------------------
+// Firebase: cooks list (shared across tabs)
+// ---------------------------------------------------------------------------
+let cooksCache = {}; // id -> data
+let currentLoadedCookId = null;
+
+function cookLabelFor(id, data){
+  const eat = data.eatTime ? new Date(data.eatTime) : null;
+  const datePart = eat ? fmt(eat) : '(no date)';
+  const nick = data.cookLabel ? data.cookLabel + ' — ' : '';
+  return nick + datePart + ' — ' + (data.weight || '?') + ' lb';
+}
+
+function refreshSelects(){
+  const sorted = Object.entries(cooksCache).sort((a,b)=>{
+    const ta = a[1].eatTime ? new Date(a[1].eatTime).getTime() : 0;
+    const tb = b[1].eatTime ? new Date(b[1].eatTime).getTime() : 0;
+    return tb - ta; // newest first
+  });
+  ['loadSelect','fbSelect','logSelect'].forEach(selId=>{
+    const sel = document.getElementById(selId);
+    const prevVal = sel.value;
+    sel.innerHTML = '<option value="">— select a cook —</option>';
+    sorted.forEach(([id, data])=>{
+      const opt = document.createElement('option');
+      opt.value = id;
+      opt.textContent = cookLabelFor(id, data);
+      sel.appendChild(opt);
+    });
+    if(prevVal && cooksCache[prevVal]) sel.value = prevVal;
+  });
+}
+
+onValue(ref(db, 'cooks'), (snap)=>{
+  cooksCache = snap.val() || {};
+  refreshSelects();
+  if(document.getElementById('fbSelect').value) renderFbSummary(document.getElementById('fbSelect').value);
+  if(document.getElementById('logSelect').value) renderLogView(document.getElementById('logSelect').value);
+});
+
+// ---------------------------------------------------------------------------
+// Save / Update cook
+// ---------------------------------------------------------------------------
+function currentDataForSave(){
+  return readForm();
+}
+
+document.getElementById('saveNewBtn').addEventListener('click', ()=>{
+  if(!lastSchedule){ render(compute()); }
+  const data = currentDataForSave();
+  const newRef = push(ref(db, 'cooks'));
+  set(newRef, data).then(()=>{
+    currentLoadedCookId = newRef.key;
+    showToast('saveToast', 'Saved as new cook.');
+    showLoadedBanner(newRef.key, data);
+  }).catch(err=>showToast('saveToast', 'Error saving: ' + err.message, true));
+});
+
+document.getElementById('updateBtn').addEventListener('click', ()=>{
+  if(!currentLoadedCookId) return;
+  const data = currentDataForSave();
+  update(ref(db, 'cooks/' + currentLoadedCookId), data).then(()=>{
+    showToast('saveToast', 'Updated loaded cook.');
+  }).catch(err=>showToast('saveToast', 'Error updating: ' + err.message, true));
+});
+
+function showToast(elId, msg, isError){
+  const el = document.getElementById(elId);
+  el.style.color = isError ? 'var(--bad)' : 'var(--good)';
+  el.textContent = msg;
+  setTimeout(()=>{ if(el.textContent===msg) el.textContent=''; }, 4000);
+}
+
+// ---------------------------------------------------------------------------
+// Load a cook into the Plan form
+// ---------------------------------------------------------------------------
+function loadCookIntoForm(id){
+  const data = cooksCache[id];
+  if(!data) return;
+  writeForm(data);
+  currentLoadedCookId = id;
+  document.getElementById('updateBtn').style.display = 'inline-block';
+  showLoadedBanner(id, data);
+  goToTab('plan');
+}
+function showLoadedBanner(id, data){
+  const banner = document.getElementById('loadedBanner');
+  banner.style.display = 'flex';
+  banner.innerHTML = '<span>Loaded: <b>' + escapeHtml(cookLabelFor(id, data)) +
+    '</b>. Change the dates above to redo it, then "Save as New Cook" — or edit anything and "Update Loaded Cook".</span>';
+}
+
+document.getElementById('loadBtn').addEventListener('click', ()=>{
+  const id = document.getElementById('loadSelect').value;
+  if(id) loadCookIntoForm(id);
+});
+document.getElementById('clearLoadBtn').addEventListener('click', ()=>{
+  currentLoadedCookId = null;
+  document.getElementById('updateBtn').style.display = 'none';
+  document.getElementById('loadedBanner').style.display = 'none';
+  document.getElementById('form').reset();
+  setDefaultDatetimes();
+  ['injectionText','rubStage1Text','rubStage2Text','smokerNotesText','extraNotesText'].forEach(f=>fillDefault(f));
+});
+
+document.getElementById('logLoadTemplateBtn').addEventListener('click', ()=>{
+  const id = document.getElementById('logSelect').value;
+  if(id) loadCookIntoForm(id);
+});
+
+// ---------------------------------------------------------------------------
+// Feedback tab
+// ---------------------------------------------------------------------------
+const RATING_FIELDS = [
+  {key:'bark', label:'Bark quality', caption:'1 = none/soft, 5 = perfect thick bark'},
+  {key:'smokeFlavor', label:'Smoke flavor', caption:'1 = too light, 3 = perfect, 5 = too strong/bitter'},
+  {key:'tenderness', label:'Tenderness', caption:'1 = tough, 3 = perfect, 5 = mushy/overcooked'},
+  {key:'moisture', label:'Moisture', caption:'1 = dry, 3 = perfect/juicy, 5 = too wet'},
+  {key:'saltiness', label:'Saltiness', caption:'1 = under-seasoned, 3 = perfect, 5 = too salty'},
+  {key:'smokeRing', label:'Smoke ring', caption:'1 = none, 5 = deep/pronounced'},
+  {key:'overall', label:'Overall', caption:'1 = poor, 5 = excellent'}
+];
+
+function buildRatingRows(){
+  const container = document.getElementById('ratingRows');
+  container.innerHTML = '';
+  RATING_FIELDS.forEach(rf=>{
+    const row = document.createElement('div');
+    row.className = 'rate-row';
+    row.innerHTML = '<div><div class="rl">'+rf.label+'</div><span class="rc">'+rf.caption+'</span></div>' +
+      '<select id="rate-'+rf.key+'"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option></select>';
+    container.appendChild(row);
+  });
+}
+buildRatingRows();
+
+document.getElementById('fbSelect').addEventListener('change', (e)=>{
+  renderFbSummary(e.target.value);
+});
+
+function renderFbSummary(id){
+  const summaryEl = document.getElementById('fbSummary');
+  const formCard = document.getElementById('fbFormCard');
+  const listCard = document.getElementById('fbListCard');
+  const commentCard = document.getElementById('commentCard');
+  if(!id || !cooksCache[id]){
+    summaryEl.className = 'entry empty';
+    summaryEl.textContent = 'Select a cook above to see its settings.';
+    formCard.style.display = 'none'; listCard.style.display = 'none'; commentCard.style.display = 'none';
+    return;
+  }
+  const data = cooksCache[id];
+  summaryEl.className = 'entry';
+  summaryEl.innerHTML = '<div class="who">' + escapeHtml(cookLabelFor(id,data)) + '</div>' +
+    '<div class="stats">Smoker: ' + escapeHtml(data.tempRange||'') + ' &middot; ' + escapeHtml(data.wood||'') +
+    ' &middot; Type: ' + (data.smokerType==='offset'?'Offset':'Other') + '</div>';
+  formCard.style.display = 'block';
+  listCard.style.display = 'block';
+  commentCard.style.display = 'block';
+  watchFeedbackAndComments(id);
+}
+
+function watchFeedbackAndComments(id){
+  onValue(ref(db, 'cooks/'+id+'/feedback'), (snap)=>{
+    const val = snap.val() || {};
+    const listEl = document.getElementById('fbList');
+    const entries = Object.values(val).sort((a,b)=>(b.submittedAt||0)-(a.submittedAt||0));
+    if(!entries.length){ listEl.innerHTML = '<div class="entry empty">No feedback yet for this cook.</div>'; return; }
+    listEl.innerHTML = entries.map(entryHtml).join('');
+  });
+  onValue(ref(db, 'cooks/'+id+'/comments'), (snap)=>{
+    const val = snap.val() || {};
+    const listEl = document.getElementById('commentList');
+    const entries = Object.values(val).sort((a,b)=>(b.submittedAt||0)-(a.submittedAt||0));
+    if(!entries.length){ listEl.innerHTML = '<div class="entry empty">No comments yet.</div>'; return; }
+    listEl.innerHTML = entries.map(c=>{
+      return '<div class="entry"><div class="who">' + escapeHtml(c.name||'Anonymous') +
+        (c.submittedAt ? ' &middot; ' + fmt(new Date(c.submittedAt)) : '') + '</div>' +
+        '<div>' + escapeHtml(c.text||'') + '</div></div>';
+    }).join('');
+  });
+}
+
+function entryHtml(fb){
+  const stats = RATING_FIELDS.map(rf=>rf.label+': '+(fb[rf.key]||'-')+'/5').join('  \u00b7  ');
+  return '<div class="entry">' +
+    '<div class="who">' + escapeHtml(fb.name||'Anonymous') + (fb.submittedAt ? ' &middot; ' + fmt(new Date(fb.submittedAt)) : '') + '</div>' +
+    '<div class="stats">' + stats + '</div>' +
+    (fb.whatToChange ? '<div><b>Would change:</b> ' + escapeHtml(fb.whatToChange) + '</div>' : '') +
+    (fb.comments ? '<div><b>Comments:</b> ' + escapeHtml(fb.comments) + '</div>' : '') +
+    '</div>';
+}
+
+document.getElementById('fbSubmitBtn').addEventListener('click', ()=>{
+  const id = document.getElementById('fbSelect').value;
+  if(!id){ showToast('fbToast', 'Pick a cook first.', true); return; }
+  const fb = { name: document.getElementById('fbName').value.trim(), submittedAt: Date.now(),
+    whatToChange: document.getElementById('fbChange').value.trim(),
+    comments: document.getElementById('fbComments').value.trim() };
+  RATING_FIELDS.forEach(rf=>{ fb[rf.key] = parseInt(document.getElementById('rate-'+rf.key).value, 10); });
+  push(ref(db, 'cooks/'+id+'/feedback'), fb).then(()=>{
+    showToast('fbToast', 'Feedback submitted, thank you!');
+    document.getElementById('fbName').value=''; document.getElementById('fbChange').value=''; document.getElementById('fbComments').value='';
+    buildRatingRows();
+  }).catch(err=>showToast('fbToast', 'Error: '+err.message, true));
+});
+
+document.getElementById('commentSubmitBtn').addEventListener('click', ()=>{
+  const id = document.getElementById('fbSelect').value;
+  if(!id){ showToast('commentToast', 'Pick a cook first.', true); return; }
+  const text = document.getElementById('commentText').value.trim();
+  if(!text) return;
+  const c = { name: document.getElementById('commentName').value.trim(), text, submittedAt: Date.now() };
+  push(ref(db, 'cooks/'+id+'/comments'), c).then(()=>{
+    showToast('commentToast', 'Comment posted.');
+    document.getElementById('commentText').value = '';
+  }).catch(err=>showToast('commentToast', 'Error: '+err.message, true));
+});
+
+// ---------------------------------------------------------------------------
+// Log tab / Copy for AI
+// ---------------------------------------------------------------------------
+document.getElementById('logSelect').addEventListener('change', (e)=>renderLogView(e.target.value));
+
+function renderLogView(id){
+  const copyCard = document.getElementById('logCopyCard');
+  if(!id || !cooksCache[id]){ copyCard.style.display = 'none'; return; }
+  copyCard.style.display = 'block';
+  buildCopyText(id).then(text=>{
+    document.getElementById('copyText').value = text;
+  });
+}
+
+function buildCopyText(id){
+  const data = cooksCache[id];
+  return new Promise((resolve)=>{
+    let fbDone=false, cDone=false, feedback=[], comments=[];
+    onValue(ref(db,'cooks/'+id+'/feedback'), snap=>{
+      feedback = Object.values(snap.val()||{}).sort((a,b)=>(a.submittedAt||0)-(b.submittedAt||0));
+      fbDone = true; maybeResolve();
+    }, {onlyOnce:true});
+    onValue(ref(db,'cooks/'+id+'/comments'), snap=>{
+      comments = Object.values(snap.val()||{}).sort((a,b)=>(a.submittedAt||0)-(b.submittedAt||0));
+      cDone = true; maybeResolve();
+    }, {onlyOnce:true});
+    function maybeResolve(){
+      if(fbDone && cDone) resolve(formatCopyText(data, feedback, comments));
+    }
+  });
+}
+
+function formatCopyText(data, feedback, comments){
+  const eat = data.eatTime ? new Date(data.eatTime) : null;
+  const smokerOn = data.smokerOn ? new Date(data.smokerOn) : null;
+  const prepStart = data.prepStart ? new Date(data.prepStart) : null;
+  const lines = [];
+  lines.push('=== BRISKET COOK REPORT ===');
+  if(data.cookLabel) lines.push('Cook: ' + data.cookLabel);
+  lines.push('Date eaten: ' + (eat ? fmt(eat) : 'n/a'));
+  lines.push('Weight: ' + data.weight + ' lb');
+  lines.push('Smoker type: ' + (data.smokerType==='offset' ? 'Offset (side firebox / front door)' : 'Other'));
+  lines.push('Temp target: ' + data.tempRange);
+  lines.push('Wood: ' + data.wood);
+  lines.push('Prep start: ' + (prepStart ? fmt(prepStart) : 'n/a'));
+  lines.push('On smoker: ' + (smokerOn ? fmt(smokerOn) : 'n/a'));
+  lines.push('Rest buffer before eating: ' + data.restBuffer + ' min');
+  lines.push('');
+  lines.push('--- Timing assumptions used ---');
+  lines.push('Cook rate estimate: ' + data.lowFactor + '-' + data.highFactor + ' hr/lb');
+  lines.push('Wrap point: ' + data.wrapFraction + '% through the estimated cook');
+  lines.push('');
+  lines.push('--- Injection recipe used ---');
+  lines.push(data.injectionText || '(none recorded)');
+  lines.push('');
+  lines.push('--- Rub used ---');
+  lines.push('Stage 1: ' + (data.rubStage1Text || '(none recorded)'));
+  lines.push('Stage 2: ' + (data.rubStage2Text || '(none recorded)'));
+  lines.push('');
+  lines.push('--- Smoker notes ---');
+  lines.push(data.smokerNotesText || '(none recorded)');
+  if(data.extraNotesText){ lines.push(''); lines.push('--- Extra notes ---'); lines.push(data.extraNotesText); }
+  lines.push('');
+  lines.push('=== FEEDBACK (' + feedback.length + ' response' + (feedback.length===1?'':'s') + ') ===');
+  if(!feedback.length){ lines.push('(no feedback submitted yet)'); }
+  feedback.forEach((fb,i)=>{
+    lines.push('');
+    lines.push('[Response ' + (i+1) + '] ' + (fb.name || 'Anonymous') + (fb.submittedAt ? ' — ' + fmt(new Date(fb.submittedAt)) : ''));
+    RATING_FIELDS.forEach(rf=>{ lines.push('  ' + rf.label + ': ' + (fb[rf.key]||'-') + '/5 (' + rf.caption + ')'); });
+    if(fb.whatToChange) lines.push('  Would change: ' + fb.whatToChange);
+    if(fb.comments) lines.push('  Comments: ' + fb.comments);
+  });
+  lines.push('');
+  lines.push('=== COMMENTS (' + comments.length + ') ===');
+  if(!comments.length){ lines.push('(no comments yet)'); }
+  comments.forEach(c=>{
+    lines.push('[' + (c.name||'Anonymous') + (c.submittedAt ? ' — ' + fmt(new Date(c.submittedAt)) : '') + ']: ' + c.text);
+  });
+  lines.push('');
+  lines.push('=== REQUEST ===');
+  lines.push('Based on the settings, procedures, and feedback above, please advise how to adjust the next cook (timing, temps, injection, rub, or technique) to improve the result.');
+  return lines.join('\n');
+}
+
+document.getElementById('copyBtn').addEventListener('click', ()=>{
+  const text = document.getElementById('copyText').value;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>showToast('copyToast','Copied to clipboard!'))
+      .catch(()=>showToast('copyToast','Could not auto-copy — select the text box and copy manually.', true));
+  } else {
+    document.getElementById('copyText').select();
+    showToast('copyToast','Select the text box and copy manually.');
+  }
+});
+
+document.getElementById('logDeleteBtn').addEventListener('click', ()=>{
+  const id = document.getElementById('logSelect').value;
+  if(!id) return;
+  const data = cooksCache[id];
+  if(!confirm('Delete "' + cookLabelFor(id,data) + '"? This also deletes its feedback and comments. This cannot be undone.')) return;
+  remove(ref(db, 'cooks/'+id)).then(()=>{
+    document.getElementById('logCopyCard').style.display = 'none';
+  });
+});
+
+</script>
+</body>
+</html>
